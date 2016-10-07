@@ -1,0 +1,28 @@
+{
+	"manifest_version": 2,
+	"name": "kayakcow",
+	"version": "1.0",
+
+	"browser_action": {
+		"default_title": "talk to cow",
+		"default_popup": "popup/popup.html"
+	},
+
+	"background": {
+			"scripts": ["backgroundpages/ctrl.js"]
+	},
+
+	"content_scripts": [
+		{
+			"matches": ["https://www.kayak.de/flights/*"],
+			"js": ["contentscripts/pricereport.js"],
+			"css": [],
+			"run_at": "document_idle"
+		}
+	],
+
+	"permissions": [
+		"tabs"
+	]
+
+}
