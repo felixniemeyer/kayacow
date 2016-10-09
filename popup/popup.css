@@ -1,0 +1,143 @@
+body{
+	background-color: #aaa;
+	width:50rem;
+	max-height:30rem;
+	padding:0;
+	margin:0;
+}
+
+/*
+	General
+*/
+.inputWithInitialValue
+{
+	color:#888;
+}
+
+.error
+{
+	margin:0px;
+	color:#f00;
+	background-color: #eee;
+}
+
+/*
+	Search Block
+*/
+
+#searchArea{
+	background-color: #aae;	
+	width: 100%;
+	margin: 0;
+}
+
+.searchTable
+{
+	margin:0;
+	border:0;
+	padding:0;
+	width:100%;
+	border-spacing: 0;
+}
+
+.searchTable tr
+{
+	margin:0;
+	border:0;
+	padding:0;
+}
+
+.searchTable th
+{
+	margin:0;
+	border:0;
+	padding:0;
+	font-weight: normal;
+	font-size: 1rem;
+}
+
+.searchTable td
+{
+	margin:0;
+	border:0;
+	padding:0;
+}
+
+.searchTable .inputAirports
+{
+	width:15rem;
+}
+
+.searchTable .inputDate
+{
+	width:8rem;
+}
+
+.searchTable .deleteButton
+{
+	width:4rem;
+}
+
+#searchButton
+{
+	display: block;
+	margin:0 auto;
+	width:100%;
+	height:2rem;
+	line-height: 2rem;
+	font-size: 1rem;
+}
+
+.collapsable{
+	position:relative;
+}
+
+.collapsable .headline
+{
+	background-color: rgba(255,255,255,0.7);
+	font-size: 1rem;
+	line-height: 1.5rem;
+	height: 1.5rem;
+	margin:0;
+}
+
+.collapsable .heading
+{
+	font-size: 1rem;
+	line-height: 1.5rem;
+	height: 1.5rem;
+	margin:0 0 0 1rem;
+}
+
+.collapseButton
+{
+	position: absolute;
+	cursor: pointer;
+	left:0.1rem;
+	top:0;
+	text-align: left;
+	width:100%;
+	font-size: 1rem;
+}
+
+
+
+/*
+	Result Block
+*/
+.searchResult{
+	background-color: #aea;
+}
+.taskTable
+{
+	width: 100%;
+	border-spacing: 0;
+	border-width: 0;
+	border-color:none;
+}
+
+.taskTable th
+{
+	text-align: left;
+	font-size: 1rem;
+}

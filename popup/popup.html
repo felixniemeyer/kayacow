@@ -1,9 +1,24 @@
 <!DOCTYPE HTML5>
 <head>
 	<title></title>
+	<link rel="stylesheet" href="popup.css">
 	<meta charset="utf-8">
 </head>
 <body>
-		<h1>hello world!</h1>
-		<script type="text/javascript" src="./popup.js"></script>
+	<div id="searchArea" class="collapsable">
+		<div class="headline">
+			<p class="heading"> Add Task </p>		
+		</div>
+		<table id="searchTable" class="searchTable">
+			<tr>
+				<th>From Airports</th>
+				<th>To Airports</th>
+				<th>From Date</th>
+				<th>To Date</th>
+				<th>Delete</th>
+			</tr>
+		</table>
+		<input type="button" id="searchButton" value="go cow!" />
+	</div>
+	<script type="text/javascript" src="./popup.js"></script>
 </body>
