@@ -160,14 +160,40 @@ function parseAirports(s, logger)
 	return airports;
 }
 
-function MyDate(days, months, years){
-	this.days = days;
-	this.months = months;
-	this.years = years;
+function MyDate(date){
+	if(date instanceof MyDate){
+		this.days = date.days;
+		this.months = date.months;
+		this.years = date.years;		
+	} else {
+		this.days = 0;
+		this.months = 0;
+		this.years = 0;
+	}
 }
 MyDate.prototype.join = function(){
 	return this.years + "-" + (this.months > 9 ? "" + this.months : "0" + this.months) + "-" + (this.days > 9 ? "" + this.days : "0" + this.days);
 };
+MyDate.prototype.laterThan = function(to){
+	if(this.years > to.years)
+	{
+		return true;
+	}
+	else if(this.years == to.years)
+	{
+		if(this.months > to.months)
+		{
+			return true;
+		}
+		else if(this.months == to.months)
+		{
+			if(this.days > to.days)
+				return true;
+		}
+	}
+	return false;
+};
+
 
 function parseDate(s, logger)
 {
@@ -280,7 +306,7 @@ function updateResults(taskId)
 	for(var i = 0; i < task.flightList.flights.length; i++)
 	{
 		var url = task.flightList.flights[i].url;
-		resultLinks.push('<a href="'+url+'">'+url+task.flightList.flights[i].price+'</a>');
+		resultLinks.push('<a href="'+url+'">'+url+": "+task.flightList.flights[i].price+'</a>');
 	}
 
 	resultBox.innerHTML = resultLinks.join("<br/>");

@@ -2,6 +2,7 @@ chrome.runtime.onMessage.addListener(handleMessage);
 var windowTaskMapping = {};
 var config = {
 	avgTabCreateDelaySecs: 5, 
+	justLogNoRequest: false
 }
 
 window.data = {
@@ -79,7 +80,7 @@ function startTask(taskId)
 
 	var task = window.data.tasks[taskId];
 
-	var previousConnections = [""];
+	var previousConnections = [{str:""}];
 	var connections;
 	for(var i = 0; i < task.segments.length; i++)
 	{
@@ -97,24 +98,34 @@ function startTask(taskId)
 					day++;
 					for(var pc = 0; pc < previousConnections.length; pc++)
 					{
-						connections.push(previousConnections[pc] + "/" + s.fromAirports[fA] + "-" + s.toAirports[tA] + "/" + date.join());
+						if(previousConnections[pc].latestDate == undefined || !previousConnections[pc].latestDate.laterThan(date))
+						connections.push({
+								str: previousConnections[pc].str + "/" + s.fromAirports[fA] + "-" + s.toAirports[tA] + "/" + date.join(),
+								latestDate: new date.constructor(date) });
+
 					}
 				}
 			}
 		}
 		previousConnections = connections;
 	}
-	chrome.windows.create({left:50, top:50, width:1000, height:600}, function(chromeWindow) {
-		createTabs(connections, 0, chromeWindow.id);
+
+	var connectionStrings = []
+	for(var i = 0; i < connections.length; i++) connectionStrings[i] = connections[i].str;
+	
+	if(!config.justLogNoRequest) chrome.windows.create({left:50, top:50, width:1000, height:600}, function(chromeWindow) {
+		createTabs(connectionStrings, 0, chromeWindow.id);
 		windowTaskMapping[chromeWindow.id] = taskId;
 		});
-	task.info.connectionsNumber = connections.length;
-	console.log("connections to create tabs for: " + connections.join("\n"));
+
+	task.info.connectionsNumber = connectionStrings.length;
+	console.log("connections to create tabs for: " + connectionStrings.join("\n"));
 }
 
 function interpolateDate(from, to, days)
 {
-	var d = new from.constructor(from.days + days, from.months, from.years);
+	var d = new from.constructor(from);
+	d.days += days;
 	var dpm;
 	while(d.days > (dpm = daysPerMonth(d.months)))
 	{
@@ -126,23 +137,10 @@ function interpolateDate(from, to, days)
 			d.years++;
 		}
 	}
-	if(d.years > to.years)
-	{
-		return null;
-	}
-	else if(d.years == to.years)
-	{
-		if(d.months > to.months)
-		{
-			return null;
-		}
-		else if(d.months == to.months)
-		{
-			if(d.days > to.days)
-				return null;
-		}
-	}
-	return d;
+	if(d.laterThan(to))
+		return null
+	else
+		return d;
 }
 
 function daysPerMonth(month, years)
