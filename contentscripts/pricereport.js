@@ -1,4 +1,4 @@
-setTimeout(reportBestConnection, 5 * 1000);
+setTimeout(reportBestConnection, 60 * 1000);
 
 function reportBestConnection()
 {

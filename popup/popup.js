@@ -149,9 +149,18 @@ function parseAirports(s, logger)
 	return airports;
 }
 
+function MyDate(days, months, years){
+	this.days = days;
+	this.months = months;
+	this.years = years;
+}
+MyDate.prototype.join = function(){
+	return this.years + "-" + (this.months > 9 ? "" + this.months : "0" + this.months) + "-" + (this.days > 9 ? "" + this.days : "0" + this.days);
+};
+
 function parseDate(s, logger)
 {
-	var date = {};
+	var date = new MyDate(); 
 	if(s == "")	
 	{
 		logger.error("An input field contains no date. Please fill in all date input fields");
@@ -172,7 +181,7 @@ function parseDate(s, logger)
 				if(c.length != format[i][1] || !isNumber(c))
 					logger.error(format[i][0] + " need to have " + format[i][1] + " digits. Date format violated. Stick to DD-MM-YYYY like e.g. 13-07-2018");
 				else 
-					date[format[i][0]] = c;
+					date[format[i][0]] = parseInt(c,10);
 			}
 		}
 	}
@@ -182,6 +191,7 @@ function parseDate(s, logger)
 function passSearchTask(searchTask)
 {
 	var taskId = bgPageData.addSearchTask(searchTask);
+	console.log("taskId returned is " + taskId)
 	createResultArea(taskId);
 	subscribeForUpdates(updateResult, taskId);
 	updateResults();
@@ -194,7 +204,7 @@ function createResultArea(taskId)
 
 function updateResults(taskId)
 {
-	var outdated = document.getElementsById("task_"+taskId);
+	var outdated = document.getElementById("task_"+taskId);
 	if(outdated)document.body.removeChild(outdated);
 
 	var task = bgPageData.tasks[taskId];
@@ -217,8 +227,8 @@ function updateResults(taskId)
 			'		<tr class="searchLine">',
 			'			<td>', from, '</td>',
 			'			<td>', to, '</td>',
-			'			<td>', task.segments[i].fromDate.join("-"), '</td>',
-			'			<td>', task.segments[i].toDate.join("-"), '/td>',
+			'			<td>', task.segments[i].fromDate.join(), '</td>',
+			'			<td>', task.segments[i].toDate.join(), '/td>',
 			'		</tr>');		
 	}
 	taskTitle += bgPageData.flightList.flights[0] ? " | " + bgPageData.flightList.flights[0].price : ""; 

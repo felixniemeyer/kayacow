@@ -90,6 +90,7 @@ body{
 
 .collapsable{
 	position:relative;
+	overflow:hidden;
 }
 
 .collapsable .headline

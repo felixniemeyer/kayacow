@@ -3,6 +3,7 @@ chrome.runtime.onMessage.addListener(handleMessage);
 window.data = {
 	tasks: [],
 	addSearchTask: function(searchTask){
+		console.log("adding search task")
 		searchTask.flightList = 
 		{
 			flights: [],
@@ -36,7 +37,7 @@ window.data = {
 			subscribers: []
 		};
 		//Asynchroniously start opening Tabs, send them the taskId!
-		id = this.tasks.push(searchTask);
+		id = this.tasks.push(searchTask) - 1;
 		setTimeout(function(){startTask(id);});
 		return id;
 	},
@@ -60,7 +61,79 @@ function handleMessage(request)
 		window.tasks[request.taskId].flightList.add(new Flight(request.price, request.priceNum, request.url));
 }
 
-function startTask(searchTask)
+function startTask(taskId)
 {
+	console.log("starting search task with id" + taskId);
 
+	var task = window.data.tasks[taskId];
+
+	var previousConnections = [""];
+	var connections;
+	for(var i = 0; i < task.segments.length; i++)
+	{
+		connections = [];
+		var s = task.segments[i];
+		for(var fA = 0; fA < s.fromAirports.length; fA++)
+		{
+			for(var tA = 0; tA < s.toAirports.length; tA++)
+			{
+				var day = 0;
+				var date;
+				while(date = interpolateDate(s.fromDate, s.toDate, day))
+				{
+					console.log(JSON.stringify(date));
+					day++;
+					for(var pc = 0; pc < previousConnections.length; pc++)
+					{
+						connections.push(previousConnections[pc] + "/" + s.fromAirports[fA] + "-" + s.toAirports[tA] + "/" + date.join());
+					}
+				}
+			}
+		}
+		previousConnections = connections;
+	}
+	chrome.windows.create({left:50, top:50, width:800, height:600}, function(window) {
+		});
+	console.log("connections to create tabs for: " + connections.join("\n"));
+}
+
+function interpolateDate(from, to, days)
+{
+	var d = new from.constructor(from.days + days, from.months, from.years);
+	var dpm;
+	while(d.days > (dpm = daysPerMonth(d.months)))
+	{
+		d.days -= dpm;
+		d.months++;
+		if(d.months > 12)
+		{
+			d.months -= 12;
+			d.years++;
+		}
+	}
+	if(d.years > to.years)
+	{
+		return null;
+	}
+	else if(d.years == to.years)
+	{
+		if(d.months > to.months)
+		{
+			return null;
+		}
+		else if(d.months == to.months)
+		{
+			if(d.days > to.days)
+				return null;
+		}
+	}
+	return d;
+}
+
+function daysPerMonth(month, years)
+{
+	var days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][(month-1)];
+	if((years % 4) == 0 && month == 2)
+		days++;
+	return days;
 }
