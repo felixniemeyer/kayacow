@@ -4,8 +4,9 @@ var localV = 10;
 var bgPageData;
 
 window.onload = function(){
-	initSearchArea();
 	bgPageData = chrome.extension.getBackgroundPage().data;
+	initSearchArea();
+	initResults();
 }
 
 function initSearchArea()
@@ -13,6 +14,16 @@ function initSearchArea()
 	addSearchRow()
 	activateSearchButton()
 	makeCollapsable(document.getElementById("searchArea"));
+}
+
+function initResults()
+{
+	for(var i = 0; i < bgPageData.tasks.length; i++)
+	{
+		createResultArea(i);
+		updateResults(i);
+		bgPageData.subscribeForUpdates(updateResults, i);
+	}
 }
 
 function addSearchRow()
@@ -203,6 +214,7 @@ function createResultArea(taskId)
 
 	var ra = document.createElement("div");
 	ra.id = "task_" + taskId;
+	ra.className = "searchResult collapsable";
 
 	var taskTitle = "";
 	var taskRows = [];
@@ -228,7 +240,6 @@ function createResultArea(taskId)
 	}
 
 	ra.innerHTML = [
-		'<div class="searchResult collapsable">',
 		'	<div class="progressBar"></div>',
 		'	<div class="headline">',
 		'		<p class="heading">', taskTitle, '<b class="progressText">initializing...</b></p>',
@@ -242,8 +253,7 @@ function createResultArea(taskId)
 		'		</tr>',
 		taskRows.join(""),
 		'	</table>',
-		'	<div class="resultBox">results will be available soon...</div>',
-		'</div>'].join("");
+		'	<div class="resultBox">results will be available soon...</div><br/>'].join("");
 
 	document.body.appendChild(ra);
 	makeCollapsable(ra);
@@ -259,17 +269,21 @@ function updateResults(taskId)
 	var progressText = ra.getElementsByClassName("progressText")[0];
 	var resultBox = ra.getElementsByClassName("resultBox")[0];
 	
-	progressBar.style["width"] = Math.floor(100 * task.info.finishedNumber / task.info.connectionsNumber) + "%";
-	progressText.textContent = " |" + task.flightList.flights[0].price + "|" + task.info.finishedNumber + "/" + task.info.connectionsNumber + "|";
-
-	var resultLinks = []
-	for(var i = 0; i < task.segments.flightList.flights.length; i++)
+	
+	if(task.info.connectionsNumber > 0)
 	{
-		var url = tasks.segments.flightList.flights[i].url;
-		resultLinks.push('<a href="'+url+'">'+tasks.segments.flightList.flights[i].price+url+'</a>');
+		progressBar.style["width"] = Math.floor(100 * task.info.finishedNumber / task.info.connectionsNumber) + "%";
+		progressText.innerHTML = " |" + task.flightList.flights[0].price + "|" + task.info.finishedNumber + "/" + task.info.connectionsNumber + "|";
 	}
 
-	resultBox.innerHTML = resultLinks.join("\n");
+	var resultLinks = []
+	for(var i = 0; i < task.flightList.flights.length; i++)
+	{
+		var url = task.flightList.flights[i].url;
+		resultLinks.push('<a href="'+url+'">'+url+task.flightList.flights[i].price+'</a>');
+	}
+
+	resultBox.innerHTML = resultLinks.join("<br/>");
 }
 
 function makeCollapsable(sa)
@@ -281,17 +295,19 @@ function makeCollapsable(sa)
 	cb.data.expanded = true;
 	sa.appendChild(cb);
 	cb.addEventListener("click", function(e){
-		if(cb.data.expanded)
+		var me = e.target;
+		var dad = me.parentNode;
+		if(me.data.expanded)
 		{
-			sa.style["height"] = "1.5rem";
-			cb.innerHTML = "&#9650";
+			dad.style["height"] = "1.7rem";
+			me.innerHTML = "&#9650";
 		}
 		else
 		{
-			sa.style["height"] = "auto";
-			cb.innerHTML = "&#9660";
+			dad.style["height"] = "auto";
+			me.innerHTML = "&#9660";
 		}
-		cb.data.expanded = !cb.data.expanded;
+		me.data.expanded = !me.data.expanded;
 	} )
 }
 

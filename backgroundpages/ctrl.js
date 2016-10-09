@@ -68,7 +68,7 @@ function handleMessage(request, sender, sendResponse)
 		task.flightList.add(new Flight(request.price, request.priceNum, request.url));
 		task.info.finishedNumber = task.flightList.flights.length;
 
-		for(var i = 0; i < subscribers.length; i++)
+		for(var i = 0; i < task.subscribers.length; i++)
 			task.subscribers[i](taskId);
 	}
 }

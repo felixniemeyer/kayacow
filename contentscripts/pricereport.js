@@ -12,7 +12,8 @@ function reportBestConnection()
 
 	//copy price, from, to, duration / maybe simply copy html?
 	var price = cheapest.getElementsByClassName("results_price")[0].innerHTML;
-	var priceNum = price.split(/\D/,1);
+
+	var priceNum = (" "+price).split(/\D/,1)[1];
 
 	var url = window.location.href;
 
