@@ -1,7 +1,7 @@
 chrome.runtime.onMessage.addListener(handleMessage);
 var windowTaskMapping = {};
 var config = {
-	avgTabCreateDelaySecs: 5, 
+	avgTabCreateDelaySecs: 60, 
 	justLogNoRequest: false
 }
 
@@ -71,6 +71,8 @@ function handleMessage(request, sender, sendResponse)
 
 		for(var i = 0; i < task.subscribers.length; i++)
 			task.subscribers[i](taskId);
+
+		chrome.tabs.remove(sender.tab.id);
 	}
 }
 
@@ -95,7 +97,7 @@ function startTask(taskId)
 				while(date = interpolateDate(s.fromDate, s.toDate, day))
 				{
 					console.log(JSON.stringify(date));
-					day++;
+					day += task.options.scatter;
 					for(var pc = 0; pc < previousConnections.length; pc++)
 					{
 						if(previousConnections[pc].latestDate == undefined || !previousConnections[pc].latestDate.laterThan(date))
@@ -155,5 +157,5 @@ function createTabs(connections, index, windowId)
 {
 	chrome.tabs.create({windowId: windowId, url: "https://www.kayak.de/flights" + connections[index]})
 	index++;
-	if(index < connections.length) setTimeout(function(){createTabs(connections, index, windowId)}, 1000 * ((0.5+Math.random())*config.avgTabCreateDelaySecs));
+	if(index < connections.length) setTimeout(function(){createTabs(connections, index, windowId)}, 1000 * (0.5+Math.random()) * config.avgTabCreateDelaySecs);
 }	

@@ -129,7 +129,9 @@ function composeSearchTask(logger)
 	}
 
 	request.segments = segments;
-
+	request.options = {
+		scatter: parseInt(document.getElementById("scatter").value,10)
+	}
 	if(logger.clean)
 		return request;
 	else
@@ -244,18 +246,18 @@ function createResultArea(taskId)
 
 	var taskTitle = "";
 	var taskRows = [];
-	var previousFrom = "";
+	var previousTo = "";
 	for(var i = 0; i < task.segments.length; i++)
 	{
 		var from = task.segments[i].fromAirports.join(",")
 		var to = task.segments[i].toAirports.join(",")
-		if(previousFrom == "")
+		if(previousTo == "")
 			taskTitle = from + " -> " + to;
-		else if(from == previousFrom)
+		else if(from == previousTo)
 			taskTitle += " -> " + to;
 		else
-			taskTitle = " + " + from + " -> " + to; 
-		previousFrom = from;
+			taskTitle += " + " + from + " -> " + to; 
+		previousTo = to;
 		taskRows.push(
 			'<tr class="searchLine">',
 			'	<td>', from, '</td>',
@@ -268,7 +270,7 @@ function createResultArea(taskId)
 	ra.innerHTML = [
 		'	<div class="progressBar"></div>',
 		'	<div class="headline">',
-		'		<p class="heading">', taskTitle, '<b class="progressText">initializing...</b></p>',
+		'		<p class="heading"><b class="progressText"></b>', taskTitle, '</p>',
 		'	</div>',
 		'	<table class="taskTable">',
 		'		<tr>',
@@ -299,8 +301,10 @@ function updateResults(taskId)
 	if(task.info.connectionsNumber > 0)
 	{
 		progressBar.style["width"] = Math.floor(100 * task.info.finishedNumber / task.info.connectionsNumber) + "%";
-		progressText.innerHTML = " |" + task.flightList.flights[0].price + "|" + task.info.finishedNumber + "/" + task.info.connectionsNumber + "|";
 	}
+
+	progressText.innerHTML = " |" + task.flightList.flights[0].price + "|" + (task.info.finishedNumber || 0) + "/" + task.info.connectionsNumber + "|";
+	
 
 	var resultLinks = []
 	for(var i = 0; i < task.flightList.flights.length; i++)

@@ -1,5 +1,5 @@
 config = {
-	waitForKayakSecs: 10 //debug! in release we want to wait at least 60sec
+	waitForKayakSecs: 200
 }
 
 
@@ -13,7 +13,7 @@ function reportBestConnection()
 	//copy price, from, to, duration / maybe simply copy html?
 	var price = cheapest.getElementsByClassName("results_price")[0].innerHTML;
 
-	var priceNum = (" "+price).split(/\D/,1)[1];
+	var priceNum = parseInt((" "+price).split(/\D+/,2)[1], 10);
 
 	var url = window.location.href;
 
