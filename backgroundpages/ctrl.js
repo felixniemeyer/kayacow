@@ -1,9 +1,15 @@
 chrome.runtime.onMessage.addListener(handleMessage);
+var windowTaskMapping = {};
+var config = {
+	avgTabCreateDelaySecs: 5, 
+}
 
 window.data = {
 	tasks: [],
 	addSearchTask: function(searchTask){
 		console.log("adding search task")
+		searchTask.info = {};
+		searchTask.subscribers = [];
 		searchTask.flightList = 
 		{
 			flights: [],
@@ -31,12 +37,9 @@ window.data = {
 					};
 					this.flights.splice(m, 0, flight);
 				}
-				for(var i = 0; i < subscribers.length; i++)
-					subscribers[i]();
-			},
-			subscribers: []
+			}
 		};
-		//Asynchroniously start opening Tabs, send them the taskId!
+
 		id = this.tasks.push(searchTask) - 1;
 		setTimeout(function(){startTask(id);});
 		return id;
@@ -55,10 +58,19 @@ function Flight(price, priceNum, url)
 Flight.prototype.cheaperThan = function(that){ return this.priceNum < that.priceNum; };
 
 
-function handleMessage(request)
+function handleMessage(request, sender, sendResponse)
 {
 	if(request.type == "reportPrice")
-		window.tasks[request.taskId].flightList.add(new Flight(request.price, request.priceNum, request.url));
+	{
+		console.log(sender.tab.windowId);
+		var taskId = windowTaskMapping[sender.tab.windowId];
+		var task = window.data.tasks[taskId];
+		task.flightList.add(new Flight(request.price, request.priceNum, request.url));
+		task.info.finishedNumber = task.flightList.flights.length;
+
+		for(var i = 0; i < subscribers.length; i++)
+			task.subscribers[i](taskId);
+	}
 }
 
 function startTask(taskId)
@@ -92,8 +104,11 @@ function startTask(taskId)
 		}
 		previousConnections = connections;
 	}
-	chrome.windows.create({left:50, top:50, width:800, height:600}, function(window) {
+	chrome.windows.create({left:50, top:50, width:1000, height:600}, function(chromeWindow) {
+		createTabs(connections, 0, chromeWindow.id);
+		windowTaskMapping[chromeWindow.id] = taskId;
 		});
+	task.info.connectionsNumber = connections.length;
 	console.log("connections to create tabs for: " + connections.join("\n"));
 }
 
@@ -137,3 +152,10 @@ function daysPerMonth(month, years)
 		days++;
 	return days;
 }
+
+function createTabs(connections, index, windowId)
+{
+	chrome.tabs.create({windowId: windowId, url: "https://www.kayak.de/flights" + connections[index]})
+	index++;
+	if(index < connections.length) setTimeout(function(){createTabs(connections, index, windowId)}, 1000 * ((0.5+Math.random())*config.avgTabCreateDelaySecs));
+}	

@@ -1,4 +1,9 @@
-setTimeout(reportBestConnection, 60 * 1000);
+config = {
+	waitForKayakSecs: 10 //debug! in release we want to wait at least 60sec
+}
+
+
+setTimeout(reportBestConnection, config.waitForKayakSecs * 1000);
 
 function reportBestConnection()
 {

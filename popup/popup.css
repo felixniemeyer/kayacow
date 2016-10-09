@@ -142,3 +142,13 @@ body{
 	text-align: left;
 	font-size: 1rem;
 }
+
+.progressBar
+{
+	position: absolute;
+	left:0;
+	top:0;
+	height:1.5rem;
+	width:10%;
+	background-color: #9999ff;
+}

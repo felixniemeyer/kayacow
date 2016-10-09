@@ -193,22 +193,17 @@ function passSearchTask(searchTask)
 	var taskId = bgPageData.addSearchTask(searchTask);
 	console.log("taskId returned is " + taskId)
 	createResultArea(taskId);
-	subscribeForUpdates(updateResult, taskId);
+	bgPageData.subscribeForUpdates(updateResults, taskId);
 	updateResults();
 }
 
 function createResultArea(taskId)
 {
-	updateResults(taskId);
-}
-
-function updateResults(taskId)
-{
-	var outdated = document.getElementById("task_"+taskId);
-	if(outdated)document.body.removeChild(outdated);
-
 	var task = bgPageData.tasks[taskId];
-	
+
+	var ra = document.createElement("div");
+	ra.id = "task_" + taskId;
+
 	var taskTitle = "";
 	var taskRows = [];
 	var previousFrom = "";
@@ -224,27 +219,19 @@ function updateResults(taskId)
 			taskTitle = " + " + from + " -> " + to; 
 		previousFrom = from;
 		taskRows.push(
-			'		<tr class="searchLine">',
-			'			<td>', from, '</td>',
-			'			<td>', to, '</td>',
-			'			<td>', task.segments[i].fromDate.join(), '</td>',
-			'			<td>', task.segments[i].toDate.join(), '/td>',
-			'		</tr>');		
-	}
-	taskTitle += bgPageData.flightList.flights[0] ? " | " + bgPageData.flightList.flights[0].price : ""; 
-	
-	var resultLinks = []
-	for(var i = 0; i < task.segments.flightsList.flights.length; i++)
-	{
-		resultLinks.push('<a href="'+tasks.segments.flightList.flights[i].url+'">'+tasks.segments.flightList.flights[i].price+'</a>');
+			'<tr class="searchLine">',
+			'	<td>', from, '</td>',
+			'	<td>', to, '</td>',
+			'	<td>', task.segments[i].fromDate.join(), '</td>',
+			'	<td>', task.segments[i].toDate.join(), '</td>',
+			'</tr>');		
 	}
 
-	var ra = document.createElement("div");
-	ra.id = "task_" + taskId;
 	ra.innerHTML = [
 		'<div class="searchResult collapsable">',
+		'	<div class="progressBar"></div>',
 		'	<div class="headline">',
-		'		<p class="heading">', taskTitle, '</p>',
+		'		<p class="heading">', taskTitle, '<b class="progressText">initializing...</b></p>',
 		'	</div>',
 		'	<table class="taskTable">',
 		'		<tr>',
@@ -255,12 +242,34 @@ function updateResults(taskId)
 		'		</tr>',
 		taskRows.join(""),
 		'	</table>',
-		resultLinks.join("<br/>"),
+		'	<div class="resultBox">results will be available soon...</div>',
 		'</div>'].join("");
 
 	document.body.appendChild(ra);
 	makeCollapsable(ra);
+}
 
+function updateResults(taskId)
+{
+	var task = bgPageData.tasks[taskId];
+
+	var ra = document.getElementById("task_" + taskId);
+
+	var progressBar = ra.getElementsByClassName("progressBar")[0];
+	var progressText = ra.getElementsByClassName("progressText")[0];
+	var resultBox = ra.getElementsByClassName("resultBox")[0];
+	
+	progressBar.style["width"] = Math.floor(100 * task.info.finishedNumber / task.info.connectionsNumber) + "%";
+	progressText.textContent = " |" + task.flightList.flights[0].price + "|" + task.info.finishedNumber + "/" + task.info.connectionsNumber + "|";
+
+	var resultLinks = []
+	for(var i = 0; i < task.segments.flightList.flights.length; i++)
+	{
+		var url = tasks.segments.flightList.flights[i].url;
+		resultLinks.push('<a href="'+url+'">'+tasks.segments.flightList.flights[i].price+url+'</a>');
+	}
+
+	resultBox.innerHTML = resultLinks.join("\n");
 }
 
 function makeCollapsable(sa)
