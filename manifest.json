@@ -18,6 +18,12 @@
 			"js": ["contentscripts/pricereport.js"],
 			"css": [],
 			"run_at": "document_idle"
+		},
+		{
+			"matches": ["https://www.kayak.de/security/*"],
+			"js": ["contentscripts/captchareport.js"],
+			"css": [],
+			"run_at": "document_idle"
 		}
 	],
 

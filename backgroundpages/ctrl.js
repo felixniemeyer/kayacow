@@ -1,7 +1,8 @@
 chrome.runtime.onMessage.addListener(handleMessage);
 var windowTaskMapping = {};
+
 var config = {
-	avgTabCreateDelaySecs: 60, 
+	avgTabCreateDelaySecs: 20, 
 	justLogNoRequest: false
 }
 
@@ -10,6 +11,8 @@ window.data = {
 	addSearchTask: function(searchTask){
 		console.log("adding search task")
 		searchTask.info = {};
+		searchTask.info.pause = false;
+		searchTask.info.resume = null; 
 		searchTask.subscribers = [];
 		searchTask.flightList = 
 		{
@@ -63,16 +66,38 @@ function handleMessage(request, sender, sendResponse)
 {
 	if(request.type == "reportPrice")
 	{
-		console.log(sender.tab.windowId);
+		console.log("received reportPrice request, windowId: " + sender.tab.windowId);
 		var taskId = windowTaskMapping[sender.tab.windowId];
 		var task = window.data.tasks[taskId];
 		task.flightList.add(new Flight(request.price, request.priceNum, request.url));
 		task.info.finishedNumber = task.flightList.flights.length;
 
+		if(task.info.finishedNumber == task.info.connectionsNumber)
+			chrome.windows.remove(sender.tab.windowId);
+
 		for(var i = 0; i < task.subscribers.length; i++)
 			task.subscribers[i](taskId);
 
 		chrome.tabs.remove(sender.tab.id);
+	}
+	if(request.type	== "reportCaptcha")
+	{
+		console.log("received reportCaptcha request");
+		var taskId = windowTaskMapping[sender.tab.windowId];
+		window.data.tasks[taskId].info.pause = true;
+		chrome.windows.update(sender.tab.windowId, {focused:true});
+		chrome.tabs.update(sender.tab.id, {active:true});
+	}
+	if(request.type	== "unpauseTask")
+	{
+		console.log("received unpauseTask request");
+		var task = window.data.tasks[windowTaskMapping[sender.tab.windowId]];
+		if(task.info.pause)
+		{
+			task.info.pause = false;
+			if(task.info.resume) task.info.resume();
+			task.info.resume = null;
+		}
 	}
 }
 
@@ -116,8 +141,8 @@ function startTask(taskId)
 	for(var i = 0; i < connections.length; i++) connectionStrings[i] = connections[i].str;
 	
 	if(!config.justLogNoRequest) chrome.windows.create({left:50, top:50, width:1000, height:600}, function(chromeWindow) {
-		createTabs(connectionStrings, 0, chromeWindow.id);
-		windowTaskMapping[chromeWindow.id] = taskId;
+			windowTaskMapping[chromeWindow.id] = taskId;
+			createTabs(connectionStrings, 0, chromeWindow.id);
 		});
 
 	task.info.connectionsNumber = connectionStrings.length;
@@ -155,7 +180,21 @@ function daysPerMonth(month, years)
 
 function createTabs(connections, index, windowId)
 {
-	chrome.tabs.create({windowId: windowId, url: "https://www.kayak.de/flights" + connections[index]})
-	index++;
-	if(index < connections.length) setTimeout(function(){createTabs(connections, index, windowId)}, 1000 * (0.5+Math.random()) * config.avgTabCreateDelaySecs);
+	console.log("index ist " + index + " und die länge " + connections.length);
+	if(index < connections.length)
+	{
+		var task = window.data.tasks[windowTaskMapping[windowId]];
+		if(!task.info.pause)
+		{
+			chrome.tabs.create({windowId: windowId, url: "https://www.kayak.de/flights" + connections[index]})
+			index++;
+			setTimeout(function(){createTabs(connections, index, windowId)}, 1000 * (0.75+0.5*Math.random()) * config.avgTabCreateDelaySecs);
+		}
+		else
+		{
+			task.info.resume = function(){
+				createTabs(connections, index, windowId);
+			};
+		}
+	}
 }	

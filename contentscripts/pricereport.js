@@ -2,6 +2,9 @@ config = {
 	waitForKayakSecs: 200
 }
 
+chrome.runtime.sendMessage({
+	"type": "unpauseTask" 
+});		
 
 setTimeout(reportBestConnection, config.waitForKayakSecs * 1000);
 

@@ -233,7 +233,6 @@ function passSearchTask(searchTask)
 	console.log("taskId returned is " + taskId)
 	createResultArea(taskId);
 	bgPageData.subscribeForUpdates(updateResults, taskId);
-	updateResults();
 }
 
 function createResultArea(taskId)
@@ -291,29 +290,32 @@ function updateResults(taskId)
 {
 	var task = bgPageData.tasks[taskId];
 
-	var ra = document.getElementById("task_" + taskId);
-
-	var progressBar = ra.getElementsByClassName("progressBar")[0];
-	var progressText = ra.getElementsByClassName("progressText")[0];
-	var resultBox = ra.getElementsByClassName("resultBox")[0];
-	
-	
-	if(task.info.connectionsNumber > 0)
+	if(task.flightList.flights.length > 0)
 	{
-		progressBar.style["width"] = Math.floor(100 * task.info.finishedNumber / task.info.connectionsNumber) + "%";
+		var ra = document.getElementById("task_" + taskId);
+
+		var progressBar = ra.getElementsByClassName("progressBar")[0];
+		var progressText = ra.getElementsByClassName("progressText")[0];
+		var resultBox = ra.getElementsByClassName("resultBox")[0];
+		
+		
+		if(task.info.connectionsNumber > 0)
+		{
+			progressBar.style["width"] = Math.floor(100 * task.info.finishedNumber / task.info.connectionsNumber) + "%";
+		}
+
+		progressText.innerHTML = " |" + task.flightList.flights[0].price + "|" + (task.info.finishedNumber || 0) + "/" + task.info.connectionsNumber + "|";
+		
+
+		var resultLinks = []
+		for(var i = 0; i < task.flightList.flights.length; i++)
+		{
+			var url = task.flightList.flights[i].url;
+			resultLinks.push('<a href="'+url+'">'+url+": "+task.flightList.flights[i].price+'</a>');
+		}
+
+		resultBox.innerHTML = resultLinks.join("<br/>");
 	}
-
-	progressText.innerHTML = " |" + task.flightList.flights[0].price + "|" + (task.info.finishedNumber || 0) + "/" + task.info.connectionsNumber + "|";
-	
-
-	var resultLinks = []
-	for(var i = 0; i < task.flightList.flights.length; i++)
-	{
-		var url = task.flightList.flights[i].url;
-		resultLinks.push('<a href="'+url+'">'+url+": "+task.flightList.flights[i].price+'</a>');
-	}
-
-	resultBox.innerHTML = resultLinks.join("<br/>");
 }
 
 function makeCollapsable(sa)
