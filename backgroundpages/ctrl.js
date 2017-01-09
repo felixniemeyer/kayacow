@@ -8,6 +8,7 @@ var config = {
 
 window.data = {
 	tasks: [],
+	taskSequence: 0,
 	addSearchTask: function(searchTask){
 		console.log("adding search task")
 		searchTask.info = {};
@@ -44,8 +45,16 @@ window.data = {
 			}
 		};
 
-		id = this.tasks.push(searchTask) - 1;
-		setTimeout(function(){startTask(id);});
+		this.tasks.push(searchTask);
+		var id = this.tasks.length - 1;
+		setTimeout(
+			(function(id){
+				return function(){
+						startTask(id);
+					};
+				}
+			)(id)
+		);
 		return id;
 	},
 	subscribeForUpdates: function(callback, searchTaskId){
@@ -106,8 +115,10 @@ function startTask(taskId)
 	console.log("starting search task with id" + taskId);
 
 	var task = window.data.tasks[taskId];
-
-	var previousConnections = [{str:""}];
+	
+	var today = new task.classes.date();
+	today.setToday();
+	var previousConnections = [{str:"", latestDate: today}];
 	var connections;
 	for(var i = 0; i < task.segments.length; i++)
 	{
@@ -117,19 +128,20 @@ function startTask(taskId)
 		{
 			for(var tA = 0; tA < s.toAirports.length; tA++)
 			{
-				var day = 0;
-				var date;
-				while(date = interpolateDate(s.fromDate, s.toDate, day))
+				for(var pc = 0; pc < previousConnections.length; pc++)
 				{
-					console.log(JSON.stringify(date));
-					day += task.options.scatter;
-					for(var pc = 0; pc < previousConnections.length; pc++)
-					{
-						if(previousConnections[pc].latestDate == undefined || !previousConnections[pc].latestDate.laterThan(date))
-						connections.push({
-								str: previousConnections[pc].str + "/" + s.fromAirports[fA] + "-" + s.toAirports[tA] + "/" + date.join(),
-								latestDate: new date.constructor(date) });
+					var day = 0;
+					var date = resolveDate(previousConnections[pc].latestDate, s.fromDate)
+					var maxDate = resolveDate(date, s.toDate);
 
+					while(!date.laterThan(maxDate))
+					{
+						console.log(JSON.stringify(date));
+						connections.push({
+							str: previousConnections[pc].str + "/" + s.fromAirports[fA] + "-" + s.toAirports[tA] + "/" + date.join(),
+							latestDate: date.clone() });
+						date.addDays(s.scatter);
+						console.log("neues 'date': " + JSON.stringify(date));
 					}
 				}
 			}
@@ -137,7 +149,7 @@ function startTask(taskId)
 		previousConnections = connections;
 	}
 
-	var connectionStrings = []
+	var connectionStrings = [];
 	for(var i = 0; i < connections.length; i++) connectionStrings[i] = connections[i].str;
 	
 	if(!config.justLogNoRequest) chrome.windows.create({left:50, top:50, width:1000, height:600}, function(chromeWindow) {
@@ -149,33 +161,21 @@ function startTask(taskId)
 	console.log("connections to create tabs for: " + connectionStrings.join("\n"));
 }
 
-function interpolateDate(from, to, days)
-{
-	var d = new from.constructor(from);
-	d.days += days;
-	var dpm;
-	while(d.days > (dpm = daysPerMonth(d.months)))
+function resolveDate(base, date){
+	var result;
+	console.log("resolving base: " + JSON.stringify(base) + ", date" + JSON.stringify(date) );
+	if(date.isRelative())
 	{
-		d.days -= dpm;
-		d.months++;
-		if(d.months > 12)
-		{
-			d.months -= 12;
-			d.years++;
-		}
+		result = base.clone();
+		result.addDays(date.getRelativeDays());
 	}
-	if(d.laterThan(to))
-		return null
 	else
-		return d;
-}
-
-function daysPerMonth(month, years)
-{
-	var days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][(month-1)];
-	if((years % 4) == 0 && month == 2)
-		days++;
-	return days;
+		if(base.laterThan(date))
+			result = base.clone();
+		else
+			result = date.clone();
+	console.log("resolving to result: " + JSON.stringify(result));
+	return result;
 }
 
 function createTabs(connections, index, windowId)
@@ -186,9 +186,13 @@ function createTabs(connections, index, windowId)
 		var task = window.data.tasks[windowTaskMapping[windowId]];
 		if(!task.info.pause)
 		{
-			chrome.tabs.create({windowId: windowId, url: "https://www.kayak.de/flights" + connections[index]})
-			index++;
-			setTimeout(function(){createTabs(connections, index, windowId)}, 1000 * (0.75+0.5*Math.random()) * config.avgTabCreateDelaySecs);
+			try{
+				chrome.tabs.create({windowId: windowId, url: "https://www.kayak.de/flights" + connections[index]})
+				index++;
+				setTimeout(function(){createTabs(connections, index, windowId)}, 1000 * (0.75+0.5*Math.random()) * config.avgTabCreateDelaySecs);
+			}catch(e){
+				task.info.pause = true;
+			}
 		}
 		else
 		{

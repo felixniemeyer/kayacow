@@ -20,7 +20,7 @@
 			"run_at": "document_idle"
 		},
 		{
-			"matches": ["https://www.kayak.de/security/*"],
+			"matches": ["https://www.kayak.de/security/*","https://www.kayak.de/flights?*"],
 			"js": ["contentscripts/captchareport.js"],
 			"css": [],
 			"run_at": "document_idle"

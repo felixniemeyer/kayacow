@@ -74,9 +74,13 @@ body{
 	width:8rem;
 }
 
+.searchTable .scatter
+{
+	width:2rem;
+}
 .searchTable .deleteButton
 {
-	width:4rem;
+	width:2rem;
 }
 
 #searchButton
@@ -131,7 +135,7 @@ body{
 	Result Block
 */
 .searchResult{
-	background-color: #aea;
+	background-color: #9e9;
 }
 .taskTable
 {

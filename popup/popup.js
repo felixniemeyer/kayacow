@@ -20,7 +20,7 @@ function initResults()
 {
 	for(var i = 0; i < bgPageData.tasks.length; i++)
 	{
-		createResultArea(i);
+		createResultArea(i, true);
 		updateResults(i);
 		bgPageData.subscribeForUpdates(updateResults, i);
 	}
@@ -34,8 +34,9 @@ function addSearchRow()
 	tr.innerHTML = [ 
 		'<td><input type="text" class="inputWithInitialValue inputAirports fromAirports" value="eg.: MUC, TXL, FRA" /></td>',
 		'<td><input type="text" class="inputWithInitialValue inputAirports toAirports" value="eg.: GRU, BUE, LIM" /></td>',
-		'<td><input type="text" class="inputWithInitialValue inputDate fromDate" value="DD-MM-YYYY" /></td>',
-		'<td><input type="text" class="inputWithInitialValue inputDate toDate" value="DD-MM-YYYY" /></td>',
+		'<td><input type="text" class="inputWithInitialValue inputDate fromDate" value="DD-MM-YYYY or +X" /></td>',
+		'<td><input type="text" class="inputWithInitialValue inputDate toDate" value="DD-MM-YYYY or +X" /></td>',
+		'<td><input type="text" class="scatter" value="1" /></td>',
 		'<td><input type="button" class="deleteButton" value="X" /></td>'].join("");
 	st.appendChild(tr);
 	tr.data = {};
@@ -124,14 +125,16 @@ function composeSearchTask(logger)
 			segment.toAirports = parseAirports(sr[i].getElementsByClassName("toAirports")[0].value, logger);
 			segment.fromDate = parseDate(sr[i].getElementsByClassName("fromDate")[0].value, logger);
 			segment.toDate = parseDate(sr[i].getElementsByClassName("toDate")[0].value, logger);
+			segment.scatter = parseInt(sr[i].getElementsByClassName("scatter")[0].value);
+			console.log(segment.scatter);
 			segments.push(segment);
 		}
 	}
 
 	request.segments = segments;
-	request.options = {
-		scatter: parseInt(document.getElementById("scatter").value,10)
-	}
+	request.classes = {
+		date: MyDate
+	};
 	if(logger.clean)
 		return request;
 	else
@@ -164,15 +167,51 @@ function parseAirports(s, logger)
 
 function MyDate(date){
 	if(date instanceof MyDate){
+		this.relativeInDays = date.relativeInDays;
 		this.days = date.days;
 		this.months = date.months;
 		this.years = date.years;		
 	} else {
+		this.relativeInDays = null;
 		this.days = 0;
 		this.months = 0;
 		this.years = 0;
 	}
 }
+MyDate.prototype.clone = function(){
+	return new MyDate(this);
+};
+MyDate.prototype.setToday = function(){
+	var today = new Date();
+	this.days = today.getDate();
+	this.months = today.getMonth();
+	this.years = today.getFullYear();
+};
+MyDate.prototype.isRelative = function(){
+	return this.relativeInDays != null;
+};
+MyDate.prototype.getRelativeDays = function(){
+	return this.relativeInDays;
+};
+MyDate.prototype.addDays = function(days){
+	if(this.isRelative())
+		this.relativeInDays += days;
+	else
+	{
+		this.days += days;
+		var dpm;
+		while(this.days > (dpm = daysPerMonth(this.months)))
+		{
+			this.days -= dpm;
+			this.months++;
+			if(this.months > 12)
+			{
+				this.months -= 12;
+				this.years++;
+			}
+		}
+	}
+};
 MyDate.prototype.join = function(){
 	return this.years + "-" + (this.months > 9 ? "" + this.months : "0" + this.months) + "-" + (this.days > 9 ? "" + this.days : "0" + this.days);
 };
@@ -204,12 +243,17 @@ function parseDate(s, logger)
 	{
 		logger.error("An input field contains no date. Please fill in all date input fields");
 	}
+	else if (s.substring(0,1) == "+" ) {
+		date.relativeInDays = parseInt(s.substring(1));
+		if(date.relativeInDays == NaN)
+			logger.error("Date format violated. Stick to DD-MM-YYYY (like e.g. 13-07-2018) or a date dynamically relative to the previous date in days (like e.g. +4)");
+	}
 	else
 	{
 		var s = s.split("-")
 		if(s.length != 3)
-		{ 
-			logger.error("Date format violated. Stick to DD-MM-YYYY like e.g. 13-07-2018");
+		{
+			logger.error("Date format violated. Stick to DD-MM-YYYY (like e.g. 13-07-2018) or a date dynamically relative to the previous date in days (like e.g. +4)");
 		}
 		else
 		{
@@ -235,7 +279,7 @@ function passSearchTask(searchTask)
 	bgPageData.subscribeForUpdates(updateResults, taskId);
 }
 
-function createResultArea(taskId)
+function createResultArea(taskId, collapsed)
 {
 	var task = bgPageData.tasks[taskId];
 
@@ -282,8 +326,8 @@ function createResultArea(taskId)
 		'	</table>',
 		'	<div class="resultBox">results will be available soon...</div><br/>'].join("");
 
-	document.body.appendChild(ra);
-	makeCollapsable(ra);
+	document.body.insertBefore(ra, document.getElementsByClassName("searchResult")[0] || null);
+	makeCollapsable(ra, collapsed);
 }
 
 function updateResults(taskId)
@@ -318,7 +362,7 @@ function updateResults(taskId)
 	}
 }
 
-function makeCollapsable(sa)
+function makeCollapsable(sa, collapsed)
 {
 	var cb = document.createElement("div");
 	cb.className = "collapseButton";
@@ -326,7 +370,7 @@ function makeCollapsable(sa)
 	cb.data = {};
 	cb.data.expanded = true;
 	sa.appendChild(cb);
-	cb.addEventListener("click", function(e){
+	var toggleCollapsed = function(e){
 		var me = e.target;
 		var dad = me.parentNode;
 		if(me.data.expanded)
@@ -340,7 +384,10 @@ function makeCollapsable(sa)
 			me.innerHTML = "&#9660";
 		}
 		me.data.expanded = !me.data.expanded;
-	} )
+	};
+	cb.addEventListener("click", toggleCollapsed);
+	if(collapsed)
+		toggleCollapsed({target: cb});
 }
 
 //helpers, prototype extensions
@@ -355,4 +402,12 @@ if(typeof(String.prototype.trim) === "undefined")
 function isNumber(string)
 {
 	return /^\d+$/.test(string);
+}
+
+function daysPerMonth(month, years)
+{
+	var days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][(month-1)];
+	if((years % 4) == 0 && month == 2)
+		days++;
+	return days;
 }
