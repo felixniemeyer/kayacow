@@ -10,8 +10,11 @@ window.data = {
 	tasks: [],
 	taskSequence: 0,
 	addSearchTask: function(searchTask){
-		console.log("adding search task")
+		console.log("adding search task");
 		searchTask.info = {};
+		searchTask.info.connectionsNumber = 0;
+		searchTask.info.failedNumber = 0;
+		searchTask.info.finishedNumber = 0;
 		searchTask.info.pause = false;
 		searchTask.info.resume = null; 
 		searchTask.subscribers = [];
@@ -78,10 +81,16 @@ function handleMessage(request, sender, sendResponse)
 		console.log("received reportPrice request, windowId: " + sender.tab.windowId);
 		var taskId = windowTaskMapping[sender.tab.windowId];
 		var task = window.data.tasks[taskId];
-		task.flightList.add(new Flight(request.price, request.priceNum, request.url));
-		task.info.finishedNumber = task.flightList.flights.length;
+		
+		if(request.status == "success")
+		{
+			task.flightList.add(new Flight(request.price, request.priceNum, request.url));
+			task.info.finishedNumber = task.flightList.flights.length;
+		}else{
+			task.info.failedNumber++;
+		}
 
-		if(task.info.finishedNumber == task.info.connectionsNumber)
+		if((task.info.finishedNumber + task.info.failedNumber) == task.info.connectionsNumber)
 			chrome.windows.remove(sender.tab.windowId);
 
 		for(var i = 0; i < task.subscribers.length; i++)
@@ -131,7 +140,7 @@ function startTask(taskId)
 				for(var pc = 0; pc < previousConnections.length; pc++)
 				{
 					var day = 0;
-					var date = resolveDate(previousConnections[pc].latestDate, s.fromDate)
+					var date = resolveDate(previousConnections[pc].latestDate, s.fromDate);
 					var maxDate = resolveDate(date, s.toDate);
 
 					while(!date.laterThan(maxDate))
@@ -186,13 +195,13 @@ function createTabs(connections, index, windowId)
 		var task = window.data.tasks[windowTaskMapping[windowId]];
 		if(!task.info.pause)
 		{
-			try{
-				chrome.tabs.create({windowId: windowId, url: "https://www.kayak.de/flights" + connections[index]})
-				index++;
-				setTimeout(function(){createTabs(connections, index, windowId)}, 1000 * (0.75+0.5*Math.random()) * config.avgTabCreateDelaySecs);
-			}catch(e){
-				task.info.pause = true;
-			}
+			chrome.tabs.create({windowId: windowId, url: "https://www.kayak.de/flights" + connections[index]}, function(entry){
+				if(chrome.runtime.lastError)
+					task.info.pause = true;	
+				else
+					index++;
+					setTimeout(function(){createTabs(connections, index, windowId)}, 1000 * (0.75+0.5*Math.random()) * config.avgTabCreateDelaySecs);
+			});
 		}
 		else
 		{

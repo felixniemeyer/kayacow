@@ -213,7 +213,10 @@ MyDate.prototype.addDays = function(days){
 	}
 };
 MyDate.prototype.join = function(){
-	return this.years + "-" + (this.months > 9 ? "" + this.months : "0" + this.months) + "-" + (this.days > 9 ? "" + this.days : "0" + this.days);
+	if(this.isRelative())
+		return "+ " + this.relativeInDays + " days"
+	else
+		return this.years + "-" + (this.months > 9 ? "" + this.months : "0" + this.months) + "-" + (this.days > 9 ? "" + this.days : "0" + this.days);
 };
 MyDate.prototype.laterThan = function(to){
 	if(this.years > to.years)
@@ -312,6 +315,7 @@ function createResultArea(taskId, collapsed)
 
 	ra.innerHTML = [
 		'	<div class="progressBar"></div>',
+		'	<div class="failedBar"></div>',
 		'	<div class="headline">',
 		'		<p class="heading"><b class="progressText"></b>', taskTitle, '</p>',
 		'	</div>',
@@ -324,7 +328,7 @@ function createResultArea(taskId, collapsed)
 		'		</tr>',
 		taskRows.join(""),
 		'	</table>',
-		'	<div class="resultBox">results will be available soon...</div><br/>'].join("");
+		'	<div class="resultBox">The results will appear here soon...</div><br/>'].join("");
 
 	document.body.insertBefore(ra, document.getElementsByClassName("searchResult")[0] || null);
 	makeCollapsable(ra, collapsed);
@@ -334,30 +338,29 @@ function updateResults(taskId)
 {
 	var task = bgPageData.tasks[taskId];
 
+	var ra = document.getElementById("task_" + taskId);
+
+	var progressBar = ra.getElementsByClassName("progressBar")[0];
+	var failedBar = ra.getElementsByClassName("failedBar")[0];
+	var progressText = ra.getElementsByClassName("progressText")[0];
+	var resultBox = ra.getElementsByClassName("resultBox")[0];
+
+	var progress = 100 * task.info.finishedNumber / task.info.connectionsNumber;
+	progressBar.style["width"] = progress + "%";
+	failedBar.style["left"] = progress + "%";
+	failedBar.style["width"] = 100 * task.info.failedNumber / task.info.connectionsNumber + "%";
+
+	var totalDone = task.info.finishedNumber + task.info.failedNumber;
+	progressText.innerHTML = " |" + (task.flightList.flights[0] ? task.flightList.flights[0].price : "?") + "|" + (totalDone || 0) + "/" + task.info.connectionsNumber + "|";
+
 	if(task.flightList.flights.length > 0)
 	{
-		var ra = document.getElementById("task_" + taskId);
-
-		var progressBar = ra.getElementsByClassName("progressBar")[0];
-		var progressText = ra.getElementsByClassName("progressText")[0];
-		var resultBox = ra.getElementsByClassName("resultBox")[0];
-		
-		
-		if(task.info.connectionsNumber > 0)
-		{
-			progressBar.style["width"] = Math.floor(100 * task.info.finishedNumber / task.info.connectionsNumber) + "%";
-		}
-
-		progressText.innerHTML = " |" + task.flightList.flights[0].price + "|" + (task.info.finishedNumber || 0) + "/" + task.info.connectionsNumber + "|";
-		
-
 		var resultLinks = []
 		for(var i = 0; i < task.flightList.flights.length; i++)
 		{
 			var url = task.flightList.flights[i].url;
 			resultLinks.push('<a href="'+url+'">'+url+": "+task.flightList.flights[i].price+'</a>');
 		}
-
 		resultBox.innerHTML = resultLinks.join("<br/>");
 	}
 }

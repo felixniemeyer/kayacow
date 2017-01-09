@@ -161,3 +161,13 @@ body{
 	width:0%;
 	background-color: #007700;
 }
+
+.failedBar
+{
+	position: absolute;
+	z-index: 4;
+	top:1.5rem;
+	width:0%;
+	height:0.2rem;
+	background-color: #dd0000;
+}
