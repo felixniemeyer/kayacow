@@ -195,12 +195,18 @@ function createTabs(connections, index, windowId)
 		var task = window.data.tasks[windowTaskMapping[windowId]];
 		if(!task.info.pause)
 		{
-			chrome.tabs.create({windowId: windowId, url: "https://www.kayak.de/flights" + connections[index]}, function(entry){
-				if(chrome.runtime.lastError)
-					task.info.pause = true;	
-				else
-					index++;
-					setTimeout(function(){createTabs(connections, index, windowId)}, 1000 * (0.75+0.5*Math.random()) * config.avgTabCreateDelaySecs);
+			var url = "https://www.kayak.de/flights" + connections[index];
+			console.log("Creating tab with url: " + url);
+			chrome.tabs.create({
+					windowId: windowId, 
+					url: url, 
+					active: false
+				}, function(entry){
+					if(chrome.runtime.lastError)
+						task.info.pause = true;	
+					else
+						index++;
+						setTimeout(function(){createTabs(connections, index, windowId)}, 1000 * (0.75+0.5*Math.random()) * config.avgTabCreateDelaySecs);
 			});
 		}
 		else
