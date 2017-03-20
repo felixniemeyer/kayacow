@@ -155,8 +155,8 @@ function parseAirports(s, logger)
 		for(var i = 0; i < s.length; i++)
 		{
 			var c = s[i].trim();
-			if(c.length != 3) 
-				logger.error("'" + c + "'' is not a correct airport. Airports must be 3 Characters. E.g. 'MUC'");
+			if(c.length != 3 && c.toUpperCase() != "PREVIOUS") 
+				logger.error("'" + c + "'' is not a correct airport. Airports must be 3 Characters. E.g. 'MUC' or 'previous'");
 			else
 				airports.push(c.toUpperCase());
 		}

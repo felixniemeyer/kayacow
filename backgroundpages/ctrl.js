@@ -2,7 +2,7 @@ chrome.runtime.onMessage.addListener(handleMessage);
 var windowTaskMapping = {};
 
 var config = {
-	avgTabCreateDelaySecs: 20, 
+	avgTabCreateDelaySecs: 40, 
 	justLogNoRequest: false
 }
 
@@ -129,6 +129,7 @@ function startTask(taskId)
 	today.setToday();
 	var previousConnections = [{str:"", latestDate: today}];
 	var connections;
+	var departWhereArrived, departure;
 	for(var i = 0; i < task.segments.length; i++)
 	{
 		connections = [];
@@ -137,6 +138,7 @@ function startTask(taskId)
 		{
 			for(var tA = 0; tA < s.toAirports.length; tA++)
 			{
+				departWhereArrived = s.fromAirports[fA].toUpperCase() == "PREVIOUS";
 				for(var pc = 0; pc < previousConnections.length; pc++)
 				{
 					var day = 0;
@@ -146,8 +148,10 @@ function startTask(taskId)
 					while(!date.laterThan(maxDate))
 					{
 						console.log(JSON.stringify(date));
+						departure = departWhereArrived ? previousConnections[pc].toAirport : s.fromAirports[fA] 
 						connections.push({
-							str: previousConnections[pc].str + "/" + s.fromAirports[fA] + "-" + s.toAirports[tA] + "/" + date.join(),
+							str: previousConnections[pc].str + "/" + departure + "-" + s.toAirports[tA] + "/" + date.join(),
+							toAirport: s.toAirports[tA],
 							latestDate: date.clone() });
 						date.addDays(s.scatter);
 						console.log("neues 'date': " + JSON.stringify(date));
